@@ -1,0 +1,114 @@
+services:
+  user-workload:
+    environment:
+      - NODE_TYPE=IOT_NODE
+      - K6_INFLUXDB_ADDR=http://192.168.1.1:8086
+      - K6_INFLUXDB_BUCKET=k6_data
+      - K6_INFLUXDB_INSECURE=true
+      - K6_INFLUXDB_ORGANIZATION=capstone
+        # NOTE: This is an Admin token, it's not suggested to use this configuration in production.
+        # Instead, use a Token with restricted privileges.
+      - K6_INFLUXDB_TOKEN=sUff4vb6943R91sZ4lm7qsh9g3ljmf4PMm54kQClIp3MOXYyI6BCP34_uUAQDtvTioDQmeXFn6jMNDY4v9gnKQ== 
+    image: xk6test
+    tty: true
+    volumes:
+      - /home/omar/fogify/examples/microservice-test/test-user:/scripts
+  forecast_service:
+    image: micro-weather-forecast:latest
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    ports:
+      - 8001:8000
+  current_service:
+    environment:
+      - NODE_TYPE=EDGE_NODE
+      - REGION=Ottawa
+    image: micro-weather-current:latest
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    ports:
+      - 8002:8000
+  edge-server:
+    environment:
+      - NODE_TYPE=EDGE_NODE
+      - REGION=Ottawa
+    image: nginx:latest
+    ports:
+        - "8080:8080"
+    volumes:
+      - /home/omar/fogify/examples/microservice-test/application/nginx_conf.conf:/etc/nginx/conf.d/default.conf
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+    depends_on:
+      - forecast_service
+      - current_service
+
+x-fogify:
+  networks:
+  - downlink:
+      bandwidth: 5Mbps
+      latency:
+        delay: 50ms
+    name: internet
+    uplink:
+      bandwidth: 10Mbps
+      drop: 0.1%
+      latency:
+        delay: 50ms
+  - bidirectional:
+      bandwidth: 100Mbps
+      drop: 0.1%
+      latency:
+        delay: 5ms
+    name: edge-net
+  nodes:
+  - capabilities:
+      memory: 2G
+      processor:
+        clock_speed: 1400
+        cores: 2
+    name: edge-node
+  - capabilities:
+      memory: 1G
+      processor:
+        clock_speed: 700
+        cores: 1
+    name: user-node
+
+  topology:
+  - label: edge-svr-1
+    networks:
+    - edge-net
+    - internet
+    node: edge-node
+    service: edge-server
+  - label: edge-forecast-svc-1
+    networks:
+    - edge-net
+    - internet
+    node: edge-node
+    service: forecast_service
+  - label: edge-current-svc-1
+    networks:
+    - edge-net
+    - internet
+    node: edge-node
+    service: current_service
+  - label: user-workload-1
+    networks:
+    - edge-net
+    - internet
+    node: user-node
+    replicas: 1
+    service: user-workload
+
+  scenarios:
+  - name: scenario_1
+    actions: 
+      - time: 30
+        position: 0
+        instance_type: user-workload-1
+        instances: 1
+        action:
+          type: command
+          parameters:
+            command: "k6 run /scripts/k6-script.js --out json=test.json"
+          

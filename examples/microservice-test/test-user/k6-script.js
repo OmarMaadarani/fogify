@@ -6,6 +6,14 @@ const BASE_URLS = [ // current & forecast -> on port 8001 & 8002
     { url: 'http://192.168.1.1:8080', endpoints: ['/api/v1/forecast/', '/api/v1/forecast/detailed', '/api/v1/forecast/three-day', '/api/v1/forecast/hourly'] }
 ];
 
+export const options = {
+    stages: [
+      { duration: '30s', target: 20 },
+      { duration: '1m30s', target: 10 },
+      { duration: '20s', target: 0 },
+    ],
+  };
+
 export default function () {
     const LOCATIONS = ['London', 'France', 'New York', 'Tokyo', 'Ottawa']; // test location query
 
@@ -18,6 +26,7 @@ export default function () {
                 check(response, {
                     'status is 200': (r) => r.status === 200,
                 });
+                sleep(1);
             });
         });
     });

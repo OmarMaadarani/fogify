@@ -102,6 +102,7 @@ class CommonDockerSuperclass(BasicConnector):
             service['deploy'] = self.node_representation(temp_node)
             service['deploy']['replicas'] = blueprint.replicas
             #service['deploy']['endpoint_mode'] = 'dnsrr'
+            service['deploy']['endpoint_mode'] = blueprint.endpoint_mode
             res['services'][blueprint.service_name] = service
 
         return res

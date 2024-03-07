@@ -166,11 +166,12 @@ class Network(BaseModel):
 class Topology(object):
     """ This class represents a topology object capable to be translated to the underlying container orchestrator"""
 
-    def __init__(self, node, service, label, replicas=1, networks=None):
+    def __init__(self, node, service, label, replicas=1, endpoint_mode="vip", networks=None):
         self.node = node
         self.service = service
         self.label = label
         self.replicas = replicas
+        self.endpoint_mode = endpoint_mode
         self.networks = networks if networks else []
 
     def __str__(self):

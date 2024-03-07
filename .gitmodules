@@ -1,0 +1,3 @@
+[submodule "examples/microservice-test/application/Microservice-Weather-App"]
+	path = examples/microservice-test/application/Microservice-Weather-App
+	url = https://github.com/OmarMaadarani/Microservice-Weather-App.git

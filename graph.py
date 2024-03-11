@@ -2,7 +2,10 @@ import docker
 import networkx as nx
 from typing import List, Dict
 from pydantic import BaseModel, Field, AliasPath, TypeAdapter
+import matplotlib
 import matplotlib.pyplot as plt
+
+#matplotlib.use('Agg')
 
 class FogNetwork(BaseModel):
 	Name: str
@@ -11,18 +14,22 @@ class FogNetwork(BaseModel):
 
 	def __hash__(self) -> int:
 		return self.Id.__hash__()
+	
+	def __repr__(self):
+		return self.Name
 
-	def __str__(self):
-		return f"ID: {self.id}, Name: {self.name}, Subnet: {self.subnet}"
 
 class FogContainer(BaseModel):
 	Id: str
 	Name: str
 	Networks: List[FogNetwork]
 
-	def toString(self):
-		return f"ID: {self.id}, Name: {self.name}, Networks: {self.networks}"
-
+	def __hash__(self) -> int:
+		return self.Id.__hash__()
+	
+	def __repr__(self):
+		return self.Name
+	
 
 client = docker.from_env()
 
@@ -61,15 +68,40 @@ def buildEdges():
 	
 	return edgeList	
 
+def nodeAttrs(G: nx.Graph):
+	"""
+	Dynamically changes attributes of nodes based on whether the node represents Container or a Network
+	"""
+	for node in G.nodes():
+		G.nodes[node]["shape"] 
+
+	return
+
+def drawTopology():
+	G = nx.Graph()
+	#G.add_edges_from(edgeList)
+	#print(G.edges())
+	G.add_nodes_from(topoNetworks, Type='NETWORK')
+	G.add_nodes_from(fogifyCntrs, Type='CONTAINER')
+	G.add_edges_from(edgeList)
+	print(G.nodes())
+
+	pos = nx.spring_layout(G)
+	#nx.draw_networkx_edges(G, pos, edgeList)
+	nx.draw_networkx(G, pos, nodelist=topoNetworks, node_color="#ff5252", node_shape="^")
+	nx.draw_networkx(G, pos, nodelist=fogifyCntrs)
+	#nx.draw_networkx_nodes(G, pos, topoNetworks, node_color="#ff5252", node_shape="^")
+	#nx.draw_networkx_nodes(G, pos, fogifyCntrs)
+	#nx.draw(G, with_labels=True)
+	plt.show()
+
 fogifyCntrs = containerList()
 # Create Unique List (Set) of networks used in the Topology (i.e Get unique networks used from each container in topology)
 topoNetworks = set(net for cntr in fogifyCntrs for net in cntr.Networks)
-
 edgeList = buildEdges()
-print(edgeList)
 
-G = nx.Graph()
-G.add_edges_from(edgeList)
-nx.draw_spring(G, with_labels=True)
-plt.show()
+drawTopology()
+
+
+
 

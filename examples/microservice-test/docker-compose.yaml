@@ -47,8 +47,18 @@ services:
       - 5500:5500
     environment:
       CONTROLLER_IP: ${MANAGER_IP}
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+    - 9091:9090
+    command:
+    - --config.file=/etc/prometheus/prometheus.yaml
+    volumes:
+    - ./prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.39.3
+    hostname: cadvisor
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:rw
@@ -58,9 +68,6 @@ services:
       - /dev/disk/:/dev/disk:ro
     ports:
       - 9090:8080
-    expose:
-      - 8080
-      - 9090
   influxdb:
     image: influxdb:latest
     ports:

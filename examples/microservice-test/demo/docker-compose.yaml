@@ -110,5 +110,6 @@ x-fogify:
         action:
           type: command
           parameters:
-            command: "k6 run /scripts/k6-script.js --out xk6-influxdb --out json=test.json"
+            action:
+              command: "k6 run /scripts/k6-script.js --out xk6-influxdb --out json=test.json"
           

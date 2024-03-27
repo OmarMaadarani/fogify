@@ -7,7 +7,6 @@ from utils.async_task import AsyncTask
 from utils.host_info import HostInfo
 from utils.logging import FogifyLogger
 from utils.network import NetworkController
-
 logger = FogifyLogger(__name__)
 
 
@@ -39,6 +38,9 @@ class Agent(object):
         connector = get_connector()
         app.config['CONNECTOR'] = connector
         app.config['NETWORK_CONTROLLER'] = NetworkController(connector)
+        
+        from utils.monitoring import PrometheusHandler, MetricCollector
+        app.config['PROMETHEUS'] = PrometheusHandler(args.agent_ip, '9091', 'fogify')
         node_labels = {}
 
         if 'LABELS' in os.environ:
@@ -48,8 +50,8 @@ class Agent(object):
         node_labels.update(HostInfo.get_all_properties())  # TODO update this part to introduce custom compute devices
         connector.inject_labels(node_labels, HOST_IP=os.environ['HOST_IP'] if 'HOST_IP' in os.environ else None)
 
-        from utils.monitoring import MetricCollector
-        from agent.views import MonitoringAPI, ActionsAPI, TopologyAPI, DistributionAPI, SnifferAPI
+        #from utils.monitoring import MetricCollector
+        from agent.views import MonitoringAPI, ActionsAPI, TopologyAPI, DistributionAPI, SnifferAPI, PrometheusAPI
 
         # Add the api routes
         app.add_url_rule('/topology/', view_func=TopologyAPI.as_view('Topology'))
@@ -58,6 +60,7 @@ class Agent(object):
         app.add_url_rule('/packets/', view_func=SnifferAPI.as_view('Packet'))
         app.add_url_rule('/generate-network-distribution/<string:name>/',
                          view_func=DistributionAPI.as_view('NetworkDistribution'))
+        app.add_url_rule('/prom-metrics/', view_func=PrometheusAPI.as_view("PromMetrics"))
         logger.info("Agent routes are installed")
         # The thread that runs the monitoring agent
         metric_controller = MetricCollector()

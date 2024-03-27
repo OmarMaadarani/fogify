@@ -29,7 +29,7 @@ class Controller(object):
         os.environ['UPLOAD_FOLDER'] = "/current_infrastructure/"
 
         from controller.views import TopologyAPI, MonitoringAPI, ActionsAPI, ControlAPI, AnnotationAPI, DistributionAPI, \
-            SnifferAPI
+            SnifferAPI, PrometheusAPI
 
         # Introduce the routes of the API
         app.add_url_rule('/topology/', view_func=TopologyAPI.as_view('Topology'))
@@ -40,5 +40,6 @@ class Controller(object):
         app.add_url_rule('/control/<string:service>/', view_func=ControlAPI.as_view('control'))
         app.add_url_rule('/generate-network-distribution/<string:name>/',
                          view_func=DistributionAPI.as_view('NetworkDistribution'))
+        app.add_url_rule('/prom-metrics/', view_func=PrometheusAPI.as_view("PromMetrics"))
         logger.info("Controller routes are installed")
         self.app = app

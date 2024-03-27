@@ -17,6 +17,7 @@ class ExceptionFogifySDK(Exception):
 FOGIFY_FILE = "fogified-docker-compose.yaml"
 TOPOLOGY_URL = "/topology/"
 MONITORING_URL = "/monitorings/"
+PROMETHEUS_URL = "/prom-metrics/"
 
 
 class FogifySDK(object):
@@ -210,6 +211,14 @@ class FogifySDK(object):
         res.timestamp = pd.to_datetime(res['timestamp']).dt.tz_localize(None)
         res.set_index('timestamp', inplace=True)
         return res.sort_values(by="count")
+
+    def get_transmit_packets(self, svc, start, end):
+        return self.get_prom_metrics("container_network_transmit_packets_total", svc, start, end)
+
+    def get_prom_metrics(self, metric: str, service: str, start: str = None, end: str = None, query_type: str = "range"):
+        params = {"metric": metric, "service": service, "type": query_type, "start": start, "end": end}
+        return requests.get(self.get_url(PROMETHEUS_URL), params)
+        
 
     def clean_metrics(self):
         if hasattr(self, 'data'):

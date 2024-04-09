@@ -6,10 +6,11 @@ import dateutil.parser as p
 import docker
 import requests
 
-from agent.models import Status, Metric, db, Record
+from agent.models import Status, Metric, Record, db
 from utils.async_task import AsyncTask
 from utils.docker_manager import get_container_ip_property, get_ip_from_network_object, ContainerNetworkNamespace
 from utils.logging import FogifyLogger
+
 
 logger = FogifyLogger(__name__)
 
@@ -45,10 +46,7 @@ class cAdvisorHandler(object):
     def get_stats_from_cadvisor(self, container):
         print("http://%s:%s/api/v2.0/stats/%s?type=docker" % (self.ip, self.port, container.id))
         stats = requests.get("http://%s:%s/api/v2.0/stats/%s?type=docker" % (self.ip, self.port, container.id)).json()
-        #print(stats)
         key = f'/system.slice/docker-{container.id}.scope'
-        #print(key)
-        #print(stats[key])
         stats[key] = {"stats": stats[key], "aliases": [container.name], "id": container.id,
             "limits": dict(memory=container.attrs['HostConfig']['Memory'],
                            cpu=container.attrs['HostConfig']['NanoCpus'])}
@@ -156,6 +154,30 @@ class cAdvisorHandler(object):
 
     def get_metrics(self):
         return self.metrics
+
+
+class PrometheusHandler(object):
+    def __init__(self, ip, port, project, client=docker.from_env()) -> None:
+        self.ip = ip
+        self.port = port
+        self.project = project
+        self.client = client
+
+    def get_query_range(self, prom_query):
+        url = f"http://{self.ip}:{self.port}/api/v1/query_range?{prom_query}"
+        res = requests.get(url).json()
+        data = res["data"]["result"][0]
+        
+        return data
+        
+
+    def get_transmit_packets(self, svc, start, end):
+        query = f"container_network_transmit_packets_total{{container_label_com_docker_swarm_service_name={svc}, interface='eth0'}}"
+        url = f"http://{self.ip}:{self.port}/api/v1/query_range?query={query}&start={start}&end={end}&step=15s"
+        res = requests.get(url).json()
+        data = res["data"]["result"][0]
+        
+        return data
 
 
 class MetricCollector(object):

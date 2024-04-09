@@ -11,7 +11,7 @@ from flask import request
 from flask.views import MethodView
 
 from agent.models import Status, Record, Metric, Packet
-from utils.monitoring import MetricCollector
+from utils.monitoring import MetricCollector, PrometheusHandler
 from utils.network import NetworkController
 
 
@@ -252,3 +252,36 @@ class DistributionAPI(MethodView):
 
         NetworkController.inject_network_distribution(os.path.join(path, name + ".dist"))
         return {"success": True}
+
+class PrometheusAPI(MethodView):
+    """ With this API, the Agent returns metrics from Prometheus """
+
+    def get(self):
+        prometheus: PrometheusHandler = app.config['PROMETHEUS']
+
+        prom_query, query_type = self.__compute_get_query()
+
+        if query_type == "range":
+            res = prometheus.get_query_range(prom_query)
+            
+        return res
+
+    def __compute_get_query(self):
+        metric, service, query_type, start, end, interface = self.__retrieve_requests_parameters()
+        query = f"{metric}{{container_label_com_docker_swarm_service_name='{service}', interface='{interface}'}}"
+        prom_query= f"query={query}&step=15s"
+        if start and end:
+            prom_query += f"&start={start}&end={end}"
+        
+        return prom_query, query_type
+
+    def __retrieve_requests_parameters(self):
+        metric = request.args.get('metric')
+        service = request.args.get('service')
+        query_type = request.args.get('type')
+        start = request.args.get('start')
+        end = request.args.get('end')
+        interface = request.args.get('interface')
+
+        return metric, service, query_type, start, end, interface
+

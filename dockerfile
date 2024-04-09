@@ -20,7 +20,7 @@ RUN apt-get install -y bison util-linux iproute2
 
 EXPOSE 5000
 EXPOSE 5500
-run /usr/local/bin/python -m pip install --upgrade pip
+RUN /usr/local/bin/python -m pip install --upgrade pip
 RUN curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 RUN chmod +x /usr/local/bin/docker-compose
 USER root

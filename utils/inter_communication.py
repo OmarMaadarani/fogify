@@ -23,6 +23,7 @@ class Communicator(object):
         agent_packet = 'http://%s:5500/packets/'
         agent_metrics = 'http://%s:5500/monitorings/'
         agent_distribution = 'http://%s:5500/generate-network-distribution/%s/'
+        agent_prometheus = "http://%s:5500/prom-metrics/"
 
     def __init__(self, connector: BasicConnector = None):
         self.connector = connector
@@ -77,6 +78,9 @@ class Communicator(object):
 
     def agents__get_packets(self, query: str = None) -> list:
         return self.agents__get(self.URLs.agent_packet.value, query, 'array')
+    
+    def agents__get_prom_metrics(self, query: str = None):
+        return self.agents__get(self.URLs.agent_prometheus.value, query)
 
     def agents__delete_metrics(self):
         return self.agents__delete(self.URLs.agent_metrics.value, "metrics")

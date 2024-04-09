@@ -267,8 +267,8 @@ class PrometheusAPI(MethodView):
         return res
 
     def __compute_get_query(self):
-        metric, service, query_type, start, end = self.__retrieve_requests_parameters()
-        query = f"{metric}{{container_label_com_docker_swarm_service_name='{service}', interface='eth0'}}"
+        metric, service, query_type, start, end, interface = self.__retrieve_requests_parameters()
+        query = f"{metric}{{container_label_com_docker_swarm_service_name='{service}', interface='{interface}'}}"
         prom_query= f"query={query}&step=15s"
         if start and end:
             prom_query += f"&start={start}&end={end}"
@@ -281,6 +281,7 @@ class PrometheusAPI(MethodView):
         query_type = request.args.get('type')
         start = request.args.get('start')
         end = request.args.get('end')
+        interface = request.args.get('interface')
 
-        return metric, service, query_type, start, end
+        return metric, service, query_type, start, end, interface
 

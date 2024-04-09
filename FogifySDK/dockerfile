@@ -2,11 +2,11 @@ FROM jupyter/scipy-notebook
 
 USER root
 
-RUN mkdir /FofigySDK
+RUN mkdir /FogifySDK
 
-COPY . /FofigySDK
+COPY . /FogifySDK
 WORKDIR /home/jovyan
-RUN pip install /FofigySDK 
+RUN pip install /FogifySDK 
 ENV GRANT_SUDO=yes
 USER root
 ENTRYPOINT ["tini", "-g", "--"]

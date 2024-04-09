@@ -330,14 +330,16 @@ class PrometheusAPI(MethodView):
             query_type = request.args.get('type')
             start = request.args.get('start')
             end = request.args.get('end')
+            interface = request.args.get('interface')
 
             query += f"metric={metric}&" if metric else ""
             query += f"type={query_type}&" if query_type else ""
             query += "start=" + start + "&" if start else ""
             query += "end=" + end + "&" if end else ""
+            query += "interface=" + interface + "&" if interface else ""
             query += "service=" + service if service else ""
 
-            return Communicator(get_connector()).agents__get_metrics(query)
+            return Communicator(get_connector()).agents__get_prom_metrics(query)
 
         except Exception as e:
             return {"Error": "{0}".format(e)}

@@ -79,7 +79,7 @@ class Communicator(object):
     def agents__get_packets(self, query: str = None) -> list:
         return self.agents__get(self.URLs.agent_packet.value, query, 'array')
     
-    def agents__get_metrics(self, query: str = None):
+    def agents__get_prom_metrics(self, query: str = None):
         return self.agents__get(self.URLs.agent_prometheus.value, query)
 
     def agents__delete_metrics(self):

@@ -212,13 +212,85 @@ class FogifySDK(object):
         res.set_index('timestamp', inplace=True)
         return res.sort_values(by="count")
 
-    def get_transmit_packets(self, svc, start, end):
-        return self.get_prom_metrics("container_network_transmit_packets_total", svc, start, end)
-
-    def get_prom_metrics(self, metric: str, service: str, start: str = None, end: str = None, query_type: str = "range"):
-        params = {"metric": metric, "service": service, "type": query_type, "start": start, "end": end}
-        return requests.get(self.get_url(PROMETHEUS_URL), params)
+    ## FUNCTIONS TO GET PROMETHEUS METRICS 
+    
+    # NETWORK TRANSMIT METRICS
+    def get_network_transmit_packets(self, svc, start, end, interface="eth0"):
+        data = self.cleanTotalMetrics(
+            self.get_prom_metrics("container_network_transmit_packets_total", svc, start, end, interface)
+        )
+        latency = self.__calcPromLatency(data, start, end)
+        return data, latency
+    
+    def get_network_transmit_packets_dropped(self, svc, start, end, interface="eth0"):
+        return self.cleanTotalMetrics(
+            self.get_prom_metrics("container_network_transmit_packets_dropped_total", svc, start, end, interface)
+        )
+    
+    def get_network_transmit_bytes(self, svc, start, end, interface="eth0"):
+        return self.cleanTotalMetrics(
+            self.get_prom_metrics("container_network_transmit_bytes_total", svc, start, end, interface)
+        )
+    
+    def get_network_transmit_errors(self, svc, start, end, interface="eth0"):
+        return self.cleanTotalMetrics(
+            self.get_prom_metrics("container_network_transmit_errors_total", svc, start, end, interface)
+        )
+    
+    # NETWORK RECEIVE METRICS
+    def get_network_receive_packets(self, svc, start, end, interface="eth0"):
+        data = self.cleanTotalMetrics(
+            self.get_prom_metrics("container_network_receive_packets_total", svc, start, end, interface)
+        )
+        latency = self.__calcPromLatency(data, start, end)
+        return data, latency
+    
+    def get_network_receive_packets_dropped(self, svc, start, end, interface="eth0"):
+        return self.cleanTotalMetrics(
+            self.get_prom_metrics("container_network_receive_packets_dropped_total", svc, start, end, interface)
+        )
+    
+    def get_network_receive_bytes(self, svc, start, end, interface="eth0"):
+        return self.cleanTotalMetrics(
+            self.get_prom_metrics("container_network_receive_bytes_total", svc, start, end, interface)
+        )
+    
+    def get_network_receive_errors(self, svc, start, end, interface="eth0"):
+        return self.cleanTotalMetrics(
+            self.get_prom_metrics("container_network_receive_errors_total", svc, start, end, interface)
+        )
+    
+    # GLOBAL SEND PROMETHEUS QUERY FOR ANY METRIC 
+    def get_prom_metrics(self, metric: str, service: str, start: str = None, end: str = None, interface: str = "eth0", query_type: str = "range"):
+        params = {"metric": metric, "service": service, "type": query_type, "start": start, "end": end, "interface": interface}
+        res = requests.get(self.get_url(PROMETHEUS_URL), params).json()
+        return res['values']
+    
+    def cleanTotalMetrics(self, data: list[list]):
+        """
+        Function used to clean up the cummalitive metrics and convert the data range represent what the values at each timestamp actually are.
+        Done by taking the value at the first timestamp, and subtracting the values at every other timestamp by it.
+        Doing this will give us the actual look of the data at each point of time, rather than the cummalitive data given by some Prometheus metric queries.
+        """
+        prevValue = data[0][1]
         
+        for timeVal in data:
+            cumalitiveVal = timeVal[1]
+            timeVal[1] = str(int(cumalitiveVal) - int(prevValue))
+            prevValue = cumalitiveVal
+
+        return data
+    
+    def __calcPromLatency(self, data, start, end):
+        totalPkts = 0
+        for timeVal in data:
+            totalPkts += int(timeVal[1])
+        
+        totalTime = float(end) - float(start)
+        latency = (totalTime / totalPkts) / 2
+        return latency
+
+
 
     def clean_metrics(self):
         if hasattr(self, 'data'):

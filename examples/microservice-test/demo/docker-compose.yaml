@@ -103,7 +103,7 @@ x-fogify:
   scenarios:
   - name: scenario_1
     actions: 
-      - time: 30
+      - time: 150
         position: 0
         instance_type: user-workload-1
         instances: 1
